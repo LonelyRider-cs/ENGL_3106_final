@@ -38,7 +38,7 @@ for (i in 723:1000) {
       file_name <- paste("A0",toString(i),".headed.txt", sep="")
       
       #name of file for unnested tokens
-      file_name_unnested <- paste("A00",toString(i),".headed.txt.u", sep="")
+      file_name_unnested <- paste("A0",toString(i),".headed.txt.u", sep="")
       
       #print current file being worked on
       print(file_name)
@@ -65,7 +65,7 @@ for (i in 723:1000) {
       file_name <- paste("A",toString(i),".headed.txt", sep="")
       
       #name of file for unnested tokens
-      file_name_unnested <- paste("A00",toString(i),".headed.txt.u", sep="")
+      file_name_unnested <- paste("A",toString(i),".headed.txt.u", sep="")
       
       #print current file being worked on
       print(file_name)
