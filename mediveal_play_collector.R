@@ -3,8 +3,8 @@ library(gutenbergr)
 library(tidytext)
 library(textdata)
 
-get(file_name)
-for (i in 723:94057) {
+all_medieval_plays <- data.frame(matrix(ncol=0,nrow=0))
+for (i in 723:1000) {
   if (nchar(i) == 3) {
     try({
       #get the name of the file
@@ -25,7 +25,10 @@ for (i in 723:94057) {
       #unnest words in play
       assign(file_name_unnested, tibble(temp_file) %>%
                mutate(lineID = row_number()) %>%
+               mutate(playID = i) %>% 
                unnest_tokens(word,temp_file,token ="ngrams",n=1))
+      
+      all_medieval_plays <- rbind(all_medieval_plays, get(file_name_unnested))
     })
   }
   
@@ -49,7 +52,10 @@ for (i in 723:94057) {
       #unnest words in play
       assign(file_name_unnested, tibble(temp_file) %>%
                mutate(lineID = row_number()) %>%
+               mutate(playID = i) %>% 
                unnest_tokens(word,temp_file,token ="ngrams",n=1))
+      
+      all_medieval_plays <- rbind(all_medieval_plays, get(file_name_unnested))
     })
   }
   
@@ -73,7 +79,10 @@ for (i in 723:94057) {
       #unnest words in play
       assign(file_name_unnested, tibble(temp_file) %>%
                mutate(lineID = row_number()) %>%
+               mutate(playID = i) %>% 
                unnest_tokens(word,temp_file,token ="ngrams",n=1))
+      
+      all_medieval_plays <- rbind(all_medieval_plays, get(file_name_unnested))
     })
   }
 }
