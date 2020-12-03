@@ -13,6 +13,11 @@ library(ggpubr)
 library(tm)
 library(eply)
 
+#We're using a new package, "topicmodels."
+#install.packages("topicmodels")
+library(topicmodels)
+
+
 data("stop_words")
 
 
@@ -38,7 +43,7 @@ colnames(GOT_tibble)[colnames(GOT_tibble) == 'GOT_pdf'] = 'text' #Rename the "GO
 #If there's a way to get each chapter indexed by name, that'd be useful for isolating
 #one character at a time.
 GOT_tibbleClean <- GOT_tibble %>% 
-  unnest_tokens(word, GOT_pdf) #unnest by word.
+  unnest_tokens(word, text) #unnest by word.
 #The first novel is now loaded, cleaned, and indexed by chapter number.
 
 #Let's do an overall sentiment analysis with BING. (Overall positive/negative)
@@ -113,7 +118,7 @@ GOT_NRC <- GOT_tibbleClean %>%    ## notice that here we are creating a new ggpl
 #Let's try bigram and skipgram analysis. This is better suited to whole corpus analysis,
 #but it's worth trying.
 SMART  <-  stop_words%>%
-  filter(lexicon == "SMART") %>% #We use this lexicon for bigram cleaning. Here is where
+  filter(lexicon == "SMART") #We use this lexicon for bigram cleaning. Here is where
                              #you'd filter stop words you specifically want to see,
                              #like names or pronouns.
 GOTbigrams <- GOT_tibble%>%
@@ -192,9 +197,8 @@ tyrion_probs <- tyrion_probs[ ,c(2,7)]%>% #Only shows columns 2 and 7, the words
 #pre-defined, but interpreted on the spot. Running the same topic model on the 
 #same data can yield slightly different results when you run it.
 
-#We're using a new package, "topicmodels."
-install.packages("topicmodels")
-library(topicmodels)
+
+
 #We've already indexed our text by chapter, let's have a quick look at the most
 #common words, indexed by chapter, sorted from most appearances in one chapter to least.
 GOT_chapterWordCounts <- GOT_tibbleClean %>%
