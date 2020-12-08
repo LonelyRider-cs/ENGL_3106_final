@@ -6,7 +6,7 @@ library(dplyr)
 all_medieval_plays_nested <- data.frame(matrix(ncol=0,nrow=0))
 all_medieval_plays_unnested <- data.frame(matrix(ncol=0,nrow=0))
 
-for (i in 723:94057) {
+for (i in 723:725) {
   if (nchar(i) == 3) {
     try({
       #get the name of the file
@@ -30,9 +30,9 @@ for (i in 723:94057) {
       assign(file_name_unnested, tibble(temp_file) %>%
                mutate(lineID = row_number()) %>%
                mutate(playID = i) %>%
-               unnest_tokens(word,temp_file,token ="ngrams",n=1))
+               unnest_tokens(word,V1,token ="ngrams",n=1))
 
-      all_medieval_plays_nested <- rbind(all_medieval_plays_nested, get(file_name_unnested))
+      all_medieval_plays_nested <- rbind(all_medieval_plays_nested, get(file_name))
       all_medieval_plays_unnested <- rbind(all_medieval_plays_unnested, get(file_name_unnested))
     })
   }
@@ -60,9 +60,9 @@ for (i in 723:94057) {
       assign(file_name_unnested, tibble(temp_file) %>%
                mutate(lineID = row_number()) %>%
                mutate(playID = i) %>%
-               unnest_tokens(word,temp_file,token ="ngrams",n=1))
+               unnest_tokens(word,V1,token ="ngrams",n=1))
 
-      all_medieval_plays_nested <- rbind(all_medieval_plays_nested, get(file_name_unnested))
+      all_medieval_plays_nested <- rbind(all_medieval_plays_nested, get(file_name))
       all_medieval_plays_unnested <- rbind(all_medieval_plays_unnested, get(file_name_unnested))
     })
   }
@@ -90,9 +90,9 @@ for (i in 723:94057) {
       assign(file_name_unnested, tibble(temp_file) %>%
                mutate(lineID = row_number()) %>%
                mutate(playID = i) %>%
-               unnest_tokens(word,temp_file,token ="ngrams",n=1))
+               unnest_tokens(word,V1,token ="ngrams",n=1))
 
-      all_medieval_plays_nested <- rbind(all_medieval_plays_nested, get(file_name_unnested))
+      all_medieval_plays_nested <- rbind(all_medieval_plays_nested, get(file_name))
       all_medieval_plays_unnested <- rbind(all_medieval_plays_unnested, get(file_name_unnested))
     })
   }

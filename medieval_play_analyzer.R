@@ -3,6 +3,12 @@ library(tidytext)
 library(textdata)
 library(dplyr)
 library(topicmodels)
+library(reshape)
+library(reshape2)
+
+data("stop_words")
+SMART  <-  stop_words%>%
+  filter(lexicon == "SMART")
 
 
 ##Bing Sentiment analysis
@@ -45,7 +51,7 @@ ggplot(mp_NRC,aes(word,n,fill=sentiment))+
 
 ##bigrams
 mp_bigrams <- all_medieval_plays_nested%>%
-  unnest_tokens(bigram, text, token = "ngrams", n = 2)
+  unnest_tokens(bigram, V1, token = "ngrams", n = 2)
 
 view(mp_bigrams %>%
        count(bigram, sort = TRUE))
