@@ -73,10 +73,12 @@ mp_bigrams_count[1:25,] %>%
   coord_flip()
 
 
-
+stop_words_topic_models <- rbind(stop_words, c("thy", NA))
+stop_words_topic_models <- rbind(stop_words_topic_models, c("thou", NA))
+stop_words_topic_models <- rbind(stop_words_topic_models, c("thee", NA))
 
 mp_playWordCounts <- all_medieval_plays_unnested %>%
-  anti_join(stop_words) %>%
+  anti_join(stop_words_topic_models) %>%
   count(playID, word, sort = TRUE) %>%
   ungroup()
 

@@ -6,7 +6,7 @@ library(dplyr)
 all_medieval_plays_nested <- data.frame(matrix(ncol=0,nrow=0))
 all_medieval_plays_unnested <- data.frame(matrix(ncol=0,nrow=0))
 
-for (i in 723:725) {
+for (i in 723:94057) {
   if (nchar(i) == 3) {
     try({
       #get the name of the file
@@ -97,3 +97,9 @@ for (i in 723:725) {
     })
   }
 }
+
+data_to_remove <- ls()
+print(ls())
+data_to_remove <- data_to_remove[1:708]
+View(data_to_remove)
+rm(list=data_to_remove)
