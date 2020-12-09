@@ -55,3 +55,23 @@ ggplot(Script_NRC,aes(word, n, fill = sentiment)) +
   geom_col(color="black",show.legend = FALSE) +
   facet_wrap(~sentiment, scales = "free") +
   coord_flip()
+
+##bigrams
+Script_bigrams <- GOTscript%>%
+  unnest_tokens(bigram,Sentence,token = "ngrams",n=2)
+view(Script_bigrams %>%
+       count(bigram, sort = TRUE))
+Scriptbigrams_filtered <- Script_bigrams %>%
+  separate(bigram, c("word1", "word2"), sep = " ") %>%
+  filter(!word1 %in% SMART$word) %>%
+  filter(!word2 %in% SMART$word)
+Scriptbigrams_scrubbed <- Scriptbigrams_filtered %>%
+  unite(bigram, word1, word2, sep = " ") 
+
+Scriptbigrams_count <- count(Scriptbigrams_scrubbed, bigram, sort = TRUE)
+Scriptbigrams_count[1:25,] %>%                 
+  mutate(bigram = reorder(bigram, n)) %>% 
+  ggplot() +
+  aes(bigram, n) +
+  geom_col(color="coral3", fill="cornsilk") +
+  coord_flip()
