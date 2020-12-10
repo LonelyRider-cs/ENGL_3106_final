@@ -1,3 +1,10 @@
+library(dplyr)
+library(tidyverse)
+library(tidytext)
+library(textdata)
+library(pdftools)
+
+
 ##analysis on all GOT book texts
 GOT <- pdf_text("Game of Thrones (1).pdf")%>%
   readr::read_lines()

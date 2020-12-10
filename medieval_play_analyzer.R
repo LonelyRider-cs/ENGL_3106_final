@@ -101,3 +101,29 @@ mp_topTopicTerms %>%
   geom_col(show.legend = FALSE) +
   facet_wrap(~ topic, scales = "free") +
   scale_y_reordered()
+
+
+#work for comparing GoT corpus to medieval plays to get percent of same words in both corpora
+GOTC_unique <- GOT_corpus_clean %>% 
+  count(word, sort=TRUE)
+#remove count, not needed
+GOTC_unique <- GOTC_unique[-2]
+
+mp_unique <- all_medieval_plays_unnested %>% 
+  count(word, sort=TRUE)
+#remove count, not needed
+mp_unique <- mp_unique[-2]
+
+#combine unique to figure out later which words are the same in both corpora
+unique_combined <- rbind(GOTC_unique, mp_unique)
+#words with count = 2 are found in both corpra
+unique_combined_count <- unique_combined %>% 
+  count(word, sort=TRUE)
+#remove all elements that are numbers(not written out)
+unique_combined_count <- unique_combined_count[259:129775, ]
+
+number_unique_total <- nrow(unique_combined_count)
+
+number_similar <- nrow(subset(unique_combined_count,n==2))
+
+percent_similar <- number_similar / number_unique_total
