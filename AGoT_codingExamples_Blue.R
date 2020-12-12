@@ -1,6 +1,6 @@
 #Here's some code for analyzing "A Game of Thrones" using the tools we've learned
 #in lecture, plus something else.
-#   -Blue, Nov. 24
+#   -Blue, Nov. 24-Dec. 10
 
 # Step 1: Load libraries, prepare stop words and sentiment analysis lexica.
 library(tidyverse)
@@ -12,11 +12,6 @@ library(widyr)
 library(ggpubr)
 library(tm)
 library(eply)
-
-#We're using a new package, "topicmodels."
-#install.packages("topicmodels")
-library(topicmodels)
-
 
 data("stop_words")
 
@@ -33,17 +28,20 @@ GOT_tibble <- tibble(GOT_pdf)%>%
   mutate(lineID = row_number()) %>% #Index by row number, just in case.
   mutate(chapternum = cumsum(str_detect(GOT_pdf, 
                                      regex("^[\\s]*BRAN[\\s]*$|^[\\s]*CATELYN[\\s]*$|^[\\s]*EDDARD[\\s]*$|^[\\s]*JON[\\s]*$|^[\\s]*DAENERYS[\\s]*$|^[\\s]*SANSA[\\s]*$|^[\\s]*ARYA[\\s]*$|^[\\s]*TYRION[\\s]*$", 
-                                           ignore_case = FALSE))))  #If one of these names, in all caps, appears alongside
+                                           ignore_case = FALSE))))    #If one of these names, in all caps, appears alongside
                                                                  #whitespace, increment the chapter by 1.
+    #This function up here^ only works on AGoT's chapter names.
 colnames(GOT_tibble)[colnames(GOT_tibble) == 'GOT_pdf'] = 'text' #Rename the "GOT_pdf" column to "text," for clarity.
 #The original experiments with AGoT in class divided the text into indexes based on
 #number of lines. This has been changed to indexing by chapter, to better understand
 #how point of view character affects vocabulary, theme, setting, etc.
+
 #Note: the Prologue is counted as Chapter 0.
 #If there's a way to get each chapter indexed by name, that'd be useful for isolating
 #one character at a time.
 GOT_tibbleClean <- GOT_tibble %>% 
   unnest_tokens(word, text) #unnest by word.
+
 #The first novel is now loaded, cleaned, and indexed by chapter number.
 
 #Let's do an overall sentiment analysis with BING. (Overall positive/negative)
@@ -118,7 +116,7 @@ GOT_NRC <- GOT_tibbleClean %>%    ## notice that here we are creating a new ggpl
 #Let's try bigram and skipgram analysis. This is better suited to whole corpus analysis,
 #but it's worth trying.
 SMART  <-  stop_words%>%
-  filter(lexicon == "SMART") #We use this lexicon for bigram cleaning. Here is where
+  filter(lexicon == "SMART") %>% #We use this lexicon for bigram cleaning. Here is where
                              #you'd filter stop words you specifically want to see,
                              #like names or pronouns.
 GOTbigrams <- GOT_tibble%>%
@@ -188,7 +186,7 @@ tyrion_probs <- tyrion_probs[ ,c(2,7)]%>% #Only shows columns 2 and 7, the words
 #running this on my local version of RStudio.
 
 #Let's try topic modeling. The tutorial I'm following/adapting is here:
-# https://www.tidytextmining.com/topicmodeling.html#topicmodeling
+#https://www.tidytextmining.com/topicmodeling.html
 #Topic modeling is a method of essentially letting the computer read our data and
 #tell us what it sees in it, instead of telling the computer to look for what we
 #want to see. In essence, topic modeling reads "documents," like Twitter posts,
@@ -197,13 +195,20 @@ tyrion_probs <- tyrion_probs[ ,c(2,7)]%>% #Only shows columns 2 and 7, the words
 #pre-defined, but interpreted on the spot. Running the same topic model on the 
 #same data can yield slightly different results when you run it.
 
-
-
+#We're using a new package, "topicmodels."
+install.packages("topicmodels")
+library(topicmodels)
 #We've already indexed our text by chapter, let's have a quick look at the most
 #common words, indexed by chapter, sorted from most appearances in one chapter to least.
+#We start with a basic word count for each chapter.
 GOT_chapterWordCounts <- GOT_tibbleClean %>%
   anti_join(stop_words) %>%
   count(chapternum, word, sort = TRUE) %>%
+  ungroup()
+#And let's do it for indexes of 200 lines.
+GOT_indexedWordCounts <- GOT_tibbleClean %>%
+  anti_join(stop_words) %>%
+  count(index = lineID %/% 200, word, sort = TRUE) %>%
   ungroup()
 #This word count is going to be the basis for our topic model. Before we can do
 #the actual topic modeling, we need to convert our data from a tibble to 
@@ -213,27 +218,91 @@ GOT_chaptersDTM <- GOT_chapterWordCounts %>%
 #The actual method of topic modeling we're using is called Latent Dirichelet
 #Allocation. Do not ask me what that precisely means, I couldn't tell you.
 #But let's try it anyway!
-GOT_chaptersLDA <- LDA(GOT_chaptersDTM, k = 4, control = list(seed = 1234))
+GOT_chaptersLDA <- LDA(GOT_chaptersDTM, k = 8, control = list(seed = 1234))
 #For the above, k = number of topics to generate. 4 is just our example, 
 #Change the seed value for different results! The creation process is the heavy 
 #part, especially when working with large corpora. Give it a few seconds.
 #Once it's done, let's clean it up and put it back in tibble form.
-GOT_chapterTopics <- tidy(GOT_chaptersLDA, matrix = "beta")
+GOT_topicTerms <- tidy(GOT_chaptersLDA, matrix = "beta")
 #One topic per term per row. Note that the topics have numbers. The program doesn't
 #necessarily know what unifies these terms under these topics, that's for us to 
 #interpret.
 #Let's look at the top 10 terms per topic.
-GOT_topTopicTerms <- GOT_chapterTopics %>%
+GOT_topChapterTopicTerms <- GOT_topicTerms %>%
   group_by(topic) %>%
-  top_n(10, beta) %>%
+  top_n(15, beta) %>%
   ungroup() %>%
   arrange(topic, -beta) 
-GOT_topTopicTerms %>% 
+GOT_topChapterTopicTerms %>% 
   mutate(term = reorder_within(term, beta, topic)) %>%
   ggplot(aes(beta, term, fill = factor(topic))) +
   geom_col(show.legend = FALSE) +
   facet_wrap(~ topic, scales = "free") +
   scale_y_reordered()
+#Let's find out what topics are most common per chapter. Do they align with characters?
+GOT_topicsPerChapter <- tidy(GOT_chaptersLDA, matrix = "gamma") #Probabilities per-chapter-per-topic
+#Each of these values is an estimated proportion of words from that chapter that are 
+#generated from that topic.
+GOT_topicsPerChapter <- GOT_topicsPerChapter %>%
+  separate(document, c("chapter"), sep = "_", convert = TRUE) 
+GOT_topicsPerChapter %>%
+  mutate(chapter = reorder(chapter, gamma * topic)) %>%
+  ggplot(aes(factor(topic), gamma)) +
+  geom_boxplot() +
+  facet_wrap(~ chapter) +
+  labs(x = "topic", y = expression(gamma))
+#This essentially shows us the topic makeup of each chapter, and how common a certain
+#topic is within a chapter. Do the topics align with points of view character? Common
+#themes? Character traits/conflicts?
+GOT_chapterClassifications <- GOT_chapterTopics %>%
+  group_by(topic, chapter) %>%
+  slice_max(gamma) %>%
+  ungroup()
+GOT_topicsByChapter <- GOT_chapterClassifications %>%
+  count(chapter, topic) %>%
+  group_by(chapter) %>%
+  top_n(1) %>%
+  ungroup() %>%
+  transmute(consensus = chapter, topic)
+
+View(GOT_chapterClassifications %>%
+  inner_join(GOT_topicsByChapter, by = "topic") %>%
+  filter(chapter != consensus))
+
+
+#Alright, let's try it with our indexes of 200 lines.
+#Cast our tibble as a DTM.
+GOT_indexDTM <- GOT_indexedWordCounts %>%
+  cast_dtm(index, word, n)
+#Run the actual topic model.
+GOT_indexLDA <- LDA(GOT_indexDTM, k = 8, control = list(seed = 1234))
+#Convert the results back into a tibble form.
+GOT_indexedTopics <- tidy(GOT_indexLDA, matrix = "beta")
+#Let's see what we got. Top words per topic.
+GOT_topIndexTopicTerms <- GOT_indexedTopics %>%
+  group_by(topic) %>%
+  top_n(15, beta) %>%
+  ungroup() %>%
+  arrange(topic, -beta) 
+GOT_topIndexTopicTerms %>% 
+  mutate(term = reorder_within(term, beta, topic)) %>%
+  ggplot(aes(beta, term, fill = factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free") +
+  scale_y_reordered()
+#Which is better at indexing by chapter?
+
+#Topic prevalence by index:
+GOT_topicsByLine <- tidy(GOT_chaptersLDA, matrix = "gamma")
+GOT_topicsByLine <- GOT_topicsPerChapter %>%
+  separate(document, c("chapter"), sep = "_", convert = TRUE) 
+GOT_topicsPerChapter %>%
+  mutate(chapter = reorder(chapter, gamma * topic)) %>%
+  ggplot(aes(factor(topic), gamma)) +
+  geom_boxplot() +
+  facet_wrap(~ chapter) +
+  labs(x = "topic", y = expression(gamma))
+
 #This is only one way of topic modeling or using LDA. The results here are skewed
 #and imperfect because of the size of the dataset. Long as it is, AGoT is still
 #just one text. Things tend to improve with the size of the dataset used (the whole
